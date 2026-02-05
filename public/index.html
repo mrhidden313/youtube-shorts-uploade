@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farman Bulk Uploader</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="bg-glow"></div>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <div>
+                    <h1
+                        style="background: linear-gradient(135deg, #fff, #6c5ce7); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">
+                        🎬 Farman Bulk Uploader</h1>
+                    <p class="subtitle">YouTube Shorts & Videos Automation</p>
+                </div>
+                <button class="btn-logout" onclick="logout()">🔓 Disconnect</button>
+            </div>
+        </header>
+
+        <main>
+            <section class="upload-section glass-card">
+                <h2>➕ Add Video to Queue</h2>
+                <form id="uploadForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Select Video (.mp4)</label>
+                            <input type="file" id="videoFile" accept=".mp4" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Video Type</label>
+                            <select id="videoType" required>
+                                <option value="short">🔥 Short (Under 60s)</option>
+                                <option value="long">📹 Long Video</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Title</label>
+                        <input type="text" id="videoTitle" placeholder="Video Title" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="videoDesc" placeholder="Description..." rows="2"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Hashtags (comma separated)</label>
+                        <input type="text" id="videoTags" placeholder="funny, viral, shorts">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Schedule Date</label>
+                            <input type="date" id="scheduleDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Schedule Time</label>
+                            <input type="time" id="scheduleTime" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Timezone</label>
+                            <select id="timezone" required>
+                                <option value="Asia/Karachi">🇵🇰 Pakistan</option>
+                                <option value="America/New_York">🇺🇸 USA East</option>
+                                <option value="America/Los_Angeles">🇺🇸 USA West</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-glow">Add to Queue</button>
+                </form>
+            </section>
+
+            <section class="queue-section">
+                <div class="section-header">
+                    <h2>⏳ Pending</h2>
+                    <span class="count" id="pendingCount">0</span>
+                </div>
+                <div class="video-list" id="pendingList"></div>
+            </section>
+
+            <section class="queue-section uploaded">
+                <div class="section-header">
+                    <h2>✅ Uploaded</h2>
+                    <span class="count" id="uploadedCount">0</span>
+                </div>
+                <div class="video-list" id="uploadedList"></div>
+            </section>
+
+            <section class="queue-section failed">
+                <div class="section-header">
+                    <h2>❌ Failed</h2>
+                    <span class="count" id="failedCount">0</span>
+                </div>
+                <div class="video-list" id="failedList"></div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Farman Bulk Uploader v2.0</p>
+        </footer>
+    </div>
+    <script src="script.js"></script>
+    <script>
+        async function logout() {
+            if (!confirm('Disconnect YouTube channel?')) return;
+            await fetch('/auth/reset', { method: 'POST' });
+            window.location.href = '/setup';
+        }
+    </script>
+</body>
+
+</html>

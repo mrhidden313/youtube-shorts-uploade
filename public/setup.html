@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Farman Bulk Uploader - Setup</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="bg-glow"></div>
+    <div class="container setup-container">
+        <header class="animated-header">
+            <div class="logo-glow">🎬</div>
+            <h1>Farman Bulk Uploader</h1>
+            <p class="subtitle">YouTube Shorts & Videos Automation</p>
+        </header>
+
+        <main>
+            <section class="setup-section glass-card">
+                <h2>🔧 Connect Your Channel</h2>
+                <p class="setup-info">
+                    Enter your Google Cloud credentials to start uploading.
+                </p>
+
+                <form id="setupForm">
+                    <div class="form-group">
+                        <label>Client ID <span class="required">*</span></label>
+                        <input type="text" id="clientId" placeholder="xxxxx.apps.googleusercontent.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Client Secret <span class="required">*</span></label>
+                        <input type="password" id="clientSecret" placeholder="GOCSPX-xxxxxxx" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Redirect URI <span class="auto-badge">Auto</span></label>
+                        <input type="text" id="redirectUri" readonly>
+                    </div>
+
+                    <button type="submit" class="btn-glow">
+                        <span class="btn-icon">▶</span> Connect YouTube Channel
+                    </button>
+                </form>
+
+                <div class="setup-steps">
+                    <h3>📋 Setup Instructions</h3>
+                    <ol>
+                        <li>Go to <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a>
+                        </li>
+                        <li>Create project → Enable <strong>YouTube Data API v3</strong></li>
+                        <li>Go to <strong>Credentials</strong> → Create <strong>OAuth Client ID</strong></li>
+                        <li>Type: <strong>Web Application</strong></li>
+                        <li>Add the Redirect URI shown above</li>
+                        <li>Copy Client ID & Secret here</li>
+                    </ol>
+
+                    <div class="warning-box">
+                        <strong>⚠️ Important:</strong> If your app is in <strong>Testing</strong> mode, you MUST add
+                        your email to <strong>Test Users</strong> in OAuth Consent Screen. Otherwise your gmail login
+                        try will be blocked to connect channel
+                        <br><br>
+                        <strong>Steps:</strong> OAuth Consent Screen → Test Users → Add Users → Enter your Gmail
+                        <br><br>
+                        <strong>💡 Tip:</strong> If you don't want to add user emails manually every time,
+                        <strong>Publish your app</strong> from Testing mode to Production in OAuth Consent Screen.
+                    </div>
+                    <a href="#" id="tutorialLink" class="tutorial-btn" target="_blank"
+                        style="color: #222; font-weight: bold; text-decoration: none; display: block; text-align: center; margin-top: 15px;">
+                        📺 Watch Tutorial (Coming Soon)
+                    </a>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Farman Bulk Uploader v2.0</p>
+        </footer>
+    </div>
+
+    <script>
+        const redirectUri = window.location.origin + '/auth/callback';
+        document.getElementById('redirectUri').value = redirectUri;
+
+        document.getElementById('setupForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const btn = e.target.querySelector('button');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner"></span> Connecting...';
+            btn.classList.add('loading');
+
+            const clientId = document.getElementById('clientId').value.trim();
+            const clientSecret = document.getElementById('clientSecret').value.trim();
+
+            try {
+                const res = await fetch('/auth/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ clientId, clientSecret, redirectUri })
+                });
+
+                const data = await res.json();
+
+                if (data.authUrl) {
+                    window.location.href = data.authUrl;
+                } else {
+                    alert('Error: ' + (data.error || 'Unknown error'));
+                    resetBtn(btn);
+                }
+            } catch (err) {
+                alert('Connection error: ' + err.message);
+                resetBtn(btn);
+            }
+        });
+
+        function resetBtn(btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<span class="btn-icon">▶</span> Connect YouTube Channel';
+            btn.classList.remove('loading');
+        }
+    </script>
+</body>
+
+</html>
