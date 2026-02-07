@@ -92,70 +92,74 @@ const isReadyForUpload = async (video) => {
     return true;
 };
 
-const checkAndUpload = async () => {
+const checkAndUpload = async (userId) => {
     try {
-        const videos = storageService.getVideos();
+        const videos = storageService.getVideos(userId);
         const pending = videos.filter(v => v.status === 'pending');
 
         if (pending.length === 0) return;
 
         for (const video of pending) {
             if (await isReadyForUpload(video)) {
-                const locked = storageService.lockVideoForUpload(video.id);
+                const locked = storageService.lockVideoForUpload(userId, video.id);
                 if (!locked) return;
 
-                console.log(`[UPLOAD] ${locked.title}`);
+                console.log(`[UPLOAD] User: ${userId} | Video: ${locked.title}`);
 
                 let retries = 0;
                 let success = false;
 
                 while (retries <= MAX_RETRIES && !success) {
                     try {
-                        await youtubeService.uploadVideo(locked, {
+                        await youtubeService.uploadVideo(userId, locked, {
                             title: locked.title,
                             description: locked.description,
                             tags: locked.tags,
                             videoType: locked.videoType
                         });
-                        storageService.updateVideoStatus(locked.id, 'uploaded');
-                        console.log(`[UPLOAD] SUCCESS!`);
+                        storageService.updateVideoStatus(userId, locked.id, 'uploaded');
                         success = true;
                     } catch (err) {
                         retries++;
-                        console.error(`[UPLOAD] Attempt ${retries} failed:`, err.message);
+                        console.error(`[UPLOAD] Failed (${retries}/${MAX_RETRIES}):`, err.message);
                         if (retries > MAX_RETRIES) {
-                            storageService.updateVideoStatus(locked.id, 'failed', err.message);
+                            storageService.updateVideoStatus(userId, locked.id, 'failed', err.message);
                         } else {
-                            console.log(`[UPLOAD] Retrying...`);
                             await new Promise(r => setTimeout(r, 3000));
                         }
                     }
                 }
-                return;
+                return; // One upload per user per cycle
             }
         }
     } catch (err) {
-        console.error("[Scheduler] Error:", err);
+        console.error(`[Scheduler] Error for user ${userId}:`, err.message);
+    }
+};
+
+const runSchedulerCycle = async () => {
+    const users = storageService.getAllUsers();
+    // console.log(`[Scheduler] Checking ${users.length} users...`);
+
+    for (const userId of users) {
+        await checkAndUpload(userId);
     }
 };
 
 const initScheduler = async () => {
     console.log('========================================');
-    console.log('  FARMAN BULK UPLOADER v2.0');
+    console.log('  MULTI-USER SCHEDULER STARTED');
     console.log('========================================');
 
     const pk = DateTime.now().setZone('Asia/Karachi');
     console.log(`System Time (PKT): ${pk.toFormat('yyyy-MM-dd hh:mm:ss a')}`);
 
     // Background check
-    fetchRealTime('Asia/Karachi').catch(() => console.log('[Time API] Initial check skipped (using system time)'));
-
-    console.log(`Window: ${UPLOAD_WINDOW_MINUTES}min | Retries: ${MAX_RETRIES}`);
-    console.log('========================================');
+    fetchRealTime('Asia/Karachi').catch(() => { });
 
     if (scheduledTask) scheduledTask.stop();
-    scheduledTask = cron.schedule('* * * * *', checkAndUpload);
+    scheduledTask = cron.schedule('* * * * *', runSchedulerCycle);
     scheduledTask.start();
 };
 
-module.exports = { initScheduler, updateSchedule: initScheduler };
+module.exports = { initScheduler };

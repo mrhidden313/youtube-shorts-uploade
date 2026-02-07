@@ -1,95 +1,67 @@
 /**
- * Config Service
- * Manages user configuration (credentials, tokens)
- * NO hardcoded credentials - all user provided
+ * Config Service (Multi-User)
+ * Manages user configuration via Storage Service
  */
 
-const fs = require('fs');
-const path = require('path');
-
-const CONFIG_PATH = path.join(__dirname, '../data/config.json');
-
-const defaultConfig = {
-    isSetupComplete: false,
-    clientId: null,
-    clientSecret: null,
-    redirectUri: null,
-    accessToken: null,
-    refreshToken: null,
-    tokenExpiry: null
-};
-
-// Ensure config exists
-const ensureConfig = () => {
-    if (!fs.existsSync(CONFIG_PATH)) {
-        fs.writeFileSync(CONFIG_PATH, JSON.stringify(defaultConfig, null, 2));
-    }
-};
-
-const readConfig = () => {
-    ensureConfig();
-    try {
-        return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
-    } catch (e) {
-        return { ...defaultConfig };
-    }
-};
-
-const writeConfig = (config) => {
-    const tempPath = `${CONFIG_PATH}.tmp`;
-    fs.writeFileSync(tempPath, JSON.stringify(config, null, 2));
-    fs.renameSync(tempPath, CONFIG_PATH);
-};
+const storageService = require('./storageService');
 
 module.exports = {
-    isSetupComplete: () => {
-        const config = readConfig();
-        return config.isSetupComplete && config.refreshToken;
+    isSetupComplete: (userId) => {
+        const settings = storageService.getSettings(userId);
+        return settings.isSetupComplete && settings.refreshToken;
     },
 
-    getCredentials: () => {
-        const config = readConfig();
+    getCredentials: (userId) => {
+        const settings = storageService.getSettings(userId);
         return {
-            clientId: config.clientId,
-            clientSecret: config.clientSecret,
-            redirectUri: config.redirectUri
+            clientId: settings.clientId,
+            clientSecret: settings.clientSecret,
+            redirectUri: settings.redirectUri
         };
     },
 
-    getTokens: () => {
-        const config = readConfig();
+    getTokens: (userId) => {
+        const settings = storageService.getSettings(userId);
         return {
-            accessToken: config.accessToken,
-            refreshToken: config.refreshToken,
-            tokenExpiry: config.tokenExpiry
+            accessToken: settings.accessToken,
+            refreshToken: settings.refreshToken,
+            tokenExpiry: settings.tokenExpiry
         };
     },
 
-    saveCredentials: (clientId, clientSecret, redirectUri) => {
-        const config = readConfig();
-        config.clientId = clientId;
-        config.clientSecret = clientSecret;
-        config.redirectUri = redirectUri;
-        writeConfig(config);
+    saveCredentials: (userId, clientId, clientSecret, redirectUri) => {
+        storageService.updateSettings(userId, {
+            clientId,
+            clientSecret,
+            redirectUri
+        });
     },
 
-    saveTokens: (accessToken, refreshToken, expiryDate) => {
-        const config = readConfig();
-        config.accessToken = accessToken;
-        config.refreshToken = refreshToken;
-        config.tokenExpiry = expiryDate;
-        config.isSetupComplete = true;
-        writeConfig(config);
+    saveTokens: (userId, accessToken, refreshToken, expiryDate) => {
+        storageService.updateSettings(userId, {
+            accessToken,
+            refreshToken,
+            tokenExpiry: expiryDate,
+            isSetupComplete: true
+        });
     },
 
-    updateAccessToken: (accessToken, expiryDate) => {
-        const config = readConfig();
-        config.accessToken = accessToken;
-        config.tokenExpiry = expiryDate;
-        writeConfig(config);
+    updateAccessToken: (userId, accessToken, expiryDate) => {
+        storageService.updateSettings(userId, {
+            accessToken,
+            tokenExpiry: expiryDate
+        });
     },
 
-    resetConfig: () => {
-        writeConfig({ ...defaultConfig });
+    resetConfig: (userId) => {
+        storageService.updateSettings(userId, {
+            isSetupComplete: false,
+            clientId: null,
+            clientSecret: null,
+            redirectUri: null,
+            accessToken: null,
+            refreshToken: null,
+            tokenExpiry: null
+        });
     }
 };

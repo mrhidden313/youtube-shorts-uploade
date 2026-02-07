@@ -50,7 +50,7 @@ const uploadVideo = (req, res) => {
             createdAt: new Date().toISOString()
         };
 
-        storageService.addVideo(videoEntry);
+        storageService.addVideo(req.userId, videoEntry);
 
         res.status(201).json({ message: 'Video added to queue', video: videoEntry });
     } catch (error) {

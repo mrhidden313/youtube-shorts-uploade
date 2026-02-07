@@ -14,47 +14,43 @@ let oauth2Client = null;
 /**
  * Initialize OAuth client from user's saved credentials
  */
-const initializeClient = async () => {
-    const { clientId, clientSecret, redirectUri } = configService.getCredentials();
-    const { refreshToken } = configService.getTokens();
+const initializeClient = async (userId) => {
+    const { clientId, clientSecret, redirectUri } = configService.getCredentials(userId);
+    const { refreshToken } = configService.getTokens(userId);
 
     if (!clientId || !clientSecret || !refreshToken) {
         throw new Error('Credentials not configured. Please run setup first.');
     }
 
-    console.log('[YouTube API] Initializing with user credentials...');
+    console.log(`[YouTube API] Initializing for User: ${userId}`);
 
-    oauth2Client = new google.auth.OAuth2(clientId, clientSecret, redirectUri);
+    const oauth2Client = new google.auth.OAuth2(clientId, clientSecret, redirectUri);
     oauth2Client.setCredentials({ refresh_token: refreshToken });
 
     // Refresh access token
     try {
-        console.log('[YouTube API] Refreshing access token...');
         const { credentials } = await oauth2Client.refreshAccessToken();
         oauth2Client.setCredentials(credentials);
 
         // Save new access token
-        configService.updateAccessToken(credentials.access_token, credentials.expiry_date);
-
-        console.log('[YouTube API] Token refreshed successfully');
+        configService.updateAccessToken(userId, credentials.access_token, credentials.expiry_date);
     } catch (refreshError) {
-        console.error('[YouTube API] Token refresh failed:', refreshError.message);
+        console.error(`[YouTube API] Token refresh failed for ${userId}:`, refreshError.message);
         throw new Error('Token refresh failed. Please re-authenticate.');
     }
 
-    youtube = google.youtube({ version: 'v3', auth: oauth2Client });
+    return google.youtube({ version: 'v3', auth: oauth2Client });
 };
 
 /**
  * Upload video to YouTube
  */
-const uploadVideo = async (video, metadata) => {
-    await initializeClient();
+const uploadVideo = async (userId, video, metadata) => {
+    const youtube = await initializeClient(userId);
 
     const isShort = metadata.videoType === 'short';
 
-    console.log(`[YouTube API] Uploading: ${metadata.title}`);
-    console.log(`[YouTube API] Type: ${isShort ? 'SHORT' : 'LONG VIDEO'}`);
+    console.log(`[YouTube API] Uploading: ${metadata.title} (User: ${userId})`);
 
     // Build hashtags
     let hashtags = '';
@@ -82,7 +78,6 @@ const uploadVideo = async (video, metadata) => {
     }
 
     const fileSize = fs.statSync(video.path).size;
-    console.log(`[YouTube API] Size: ${(fileSize / 1024 / 1024).toFixed(2)} MB`);
 
     try {
         const response = await youtube.videos.insert({
@@ -101,11 +96,6 @@ const uploadVideo = async (video, metadata) => {
             media: {
                 body: fs.createReadStream(video.path)
             }
-        }, {
-            onUploadProgress: (evt) => {
-                const progress = (evt.bytesRead / fileSize) * 100;
-                process.stdout.write(`\r[YouTube API] Progress: ${progress.toFixed(1)}%`);
-            }
         });
 
         const videoId = response.data.id;
@@ -113,20 +103,13 @@ const uploadVideo = async (video, metadata) => {
             ? `https://youtube.com/shorts/${videoId}`
             : `https://youtube.com/watch?v=${videoId}`;
 
-        console.log(`\n[YouTube API] SUCCESS!`);
-        console.log(`[YouTube API] URL: ${videoUrl}`);
-
+        console.log(`[YouTube API] SUCCESS: ${videoUrl}`);
         return { videoId, url: videoUrl };
 
     } catch (error) {
-        console.error(`\n[YouTube API] FAILED:`, error.message);
-
-        if (error.code === 403) {
-            throw new Error('API quota exceeded or permission denied');
-        } else if (error.code === 401) {
-            throw new Error('Authentication failed. Please re-authenticate.');
-        }
-
+        console.error(`[YouTube API] FAILED:`, error.message);
+        if (error.code === 403) throw new Error('API quota exceeded or permission denied');
+        if (error.code === 401) throw new Error('Authentication failed. Please re-authenticate.');
         throw error;
     }
 };
@@ -134,9 +117,9 @@ const uploadVideo = async (video, metadata) => {
 /**
  * Get Channel Profile (Name & Avatar)
  */
-const getChannelProfile = async () => {
-    await initializeClient();
+const getChannelProfile = async (userId) => {
     try {
+        const youtube = await initializeClient(userId);
         const response = await youtube.channels.list({
             part: 'snippet',
             mine: true
@@ -152,11 +135,11 @@ const getChannelProfile = async () => {
         }
         return { connected: false, error: 'No channel found' };
     } catch (error) {
-        console.error('[YouTube API] Profile fetch failed:', error.message);
-        if (error.message.includes('invalid_grant') || error.code === 401) {
-            throw new Error('Token Expired');
+        console.error(`[YouTube API] Profile fetch failed for ${userId}:`, error.message);
+        if (error.message.includes('Credentials not configured')) {
+            return { connected: false };
         }
-        throw error;
+        return { connected: false, error: error.message };
     }
 };
 

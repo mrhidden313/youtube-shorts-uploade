@@ -1,67 +1,101 @@
 const fs = require('fs');
 const path = require('path');
 
-const DB_PATH = path.join(__dirname, '../data/db.json');
+const USERS_DIR = path.join(__dirname, '../data/users');
 
-// Ensure DB Directory and File exist
-const dir = path.dirname(DB_PATH);
-if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+// Ensure Users Directory exists
+if (!fs.existsSync(USERS_DIR)) {
+    fs.mkdirSync(USERS_DIR, { recursive: true });
 }
 
-if (!fs.existsSync(DB_PATH)) {
-    fs.writeFileSync(DB_PATH, JSON.stringify({ settings: {}, videos: [] }, null, 2));
-}
+const getUserDBPath = (userId) => path.join(USERS_DIR, `${userId}.json`);
 
-const readDB = () => {
+const initUser = (userId) => {
+    const dbPath = getUserDBPath(userId);
+    if (!fs.existsSync(dbPath)) {
+        // Initial DB State for new user
+        const initialData = {
+            settings: {
+                isSetupComplete: false,
+                clientId: null,
+                clientSecret: null,
+                redirectUri: null,
+                accessToken: null,
+                refreshToken: null,
+                tokenExpiry: null
+            },
+            videos: []
+        };
+        fs.writeFileSync(dbPath, JSON.stringify(initialData, null, 2));
+    }
+};
+
+const readUserDB = (userId) => {
     try {
-        const data = fs.readFileSync(DB_PATH);
+        const dbPath = getUserDBPath(userId);
+        if (!fs.existsSync(dbPath)) return { settings: {}, videos: [] };
+        const data = fs.readFileSync(dbPath);
         return JSON.parse(data);
     } catch (error) {
-        console.error("DB Read Error:", error);
+        console.error(`DB Read Error (${userId}):`, error);
         return { settings: {}, videos: [] };
     }
 };
 
-const writeDB = (data) => {
-    const tempPath = `${DB_PATH}.tmp`;
+const writeUserDB = (userId, data) => {
+    const dbPath = getUserDBPath(userId);
+    const tempPath = `${dbPath}.tmp`;
     fs.writeFileSync(tempPath, JSON.stringify(data, null, 2));
-    fs.renameSync(tempPath, DB_PATH);
+    fs.renameSync(tempPath, dbPath);
+};
+
+// Get all user IDs (for scheduler)
+const getAllUsers = () => {
+    try {
+        return fs.readdirSync(USERS_DIR)
+            .filter(file => file.endsWith('.json'))
+            .map(file => file.replace('.json', ''));
+    } catch (e) {
+        return [];
+    }
 };
 
 module.exports = {
-    getSettings: () => readDB().settings,
+    initUser,
+    getAllUsers,
 
-    updateSettings: (newSettings) => {
-        const db = readDB();
+    getSettings: (userId) => readUserDB(userId).settings,
+
+    updateSettings: (userId, newSettings) => {
+        const db = readUserDB(userId);
         db.settings = { ...db.settings, ...newSettings };
-        writeDB(db);
+        writeUserDB(userId, db);
         return db.settings;
     },
 
-    getVideos: () => readDB().videos,
+    getVideos: (userId) => readUserDB(userId).videos,
 
-    addVideo: (video) => {
-        const db = readDB();
+    addVideo: (userId, video) => {
+        const db = readUserDB(userId);
         db.videos.push(video);
-        writeDB(db);
+        writeUserDB(userId, db);
         return video;
     },
 
-    updateVideoStatus: (id, status, error = null) => {
-        const db = readDB();
+    updateVideoStatus: (userId, id, status, error = null) => {
+        const db = readUserDB(userId);
         const videoIndex = db.videos.findIndex(v => v.id === id);
         if (videoIndex > -1) {
             db.videos[videoIndex].status = status;
             if (error) db.videos[videoIndex].error = error;
-            writeDB(db);
+            writeUserDB(userId, db);
             return db.videos[videoIndex];
         }
         return null;
     },
 
-    lockVideoForUpload: (targetVideoId) => {
-        const db = readDB();
+    lockVideoForUpload: (userId, targetVideoId) => {
+        const db = readUserDB(userId);
         const isProcessing = db.videos.some(v => v.status === 'processing');
         if (isProcessing) return null;
 
@@ -71,16 +105,18 @@ module.exports = {
 
         if (videoIndex > -1) {
             db.videos[videoIndex].status = 'processing';
-            writeDB(db);
+            writeUserDB(userId, db);
             return db.videos[videoIndex];
         }
         return null;
     },
 
-    clearVideosByStatus: (status) => {
-        const db = readDB();
+    clearVideosByStatus: (userId, status) => {
+        const db = readUserDB(userId);
         const initialLength = db.videos.length;
 
+        // Note: In multi-user, we might want to be careful about deleting files if paths are shared.
+        // But assumed each upload has unique path or is temp.
         db.videos.filter(v => v.status === status).forEach(v => {
             try {
                 if (v.path && fs.existsSync(v.path)) {
@@ -92,12 +128,12 @@ module.exports = {
         });
 
         db.videos = db.videos.filter(v => v.status !== status);
-        writeDB(db);
+        writeUserDB(userId, db);
         return initialLength - db.videos.length;
     },
 
-    deleteVideoById: (id) => {
-        const db = readDB();
+    deleteVideoById: (userId, id) => {
+        const db = readUserDB(userId);
         const videoIndex = db.videos.findIndex(v => v.id === id);
 
         if (videoIndex === -1) return false;
@@ -115,12 +151,12 @@ module.exports = {
 
         // Remove from DB
         db.videos.splice(videoIndex, 1);
-        writeDB(db);
+        writeUserDB(userId, db);
         return true;
     },
 
-    getReadyVideos: () => {
-        const db = readDB();
+    getReadyVideos: (userId) => {
+        const db = readUserDB(userId);
         const now = new Date();
 
         return db.videos.filter(v => {

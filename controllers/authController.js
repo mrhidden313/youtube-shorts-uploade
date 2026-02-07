@@ -18,12 +18,13 @@ const SCOPES = [
 const startAuth = (req, res) => {
     try {
         const { clientId, clientSecret, redirectUri } = req.body;
+        const userId = req.userId;
 
         if (!clientId || !clientSecret) {
             return res.status(400).json({ error: 'Client ID and Secret are required' });
         }
 
-        configService.saveCredentials(clientId, clientSecret, redirectUri);
+        configService.saveCredentials(userId, clientId, clientSecret, redirectUri);
 
         const oauth2Client = new google.auth.OAuth2(clientId, clientSecret, redirectUri);
 
@@ -40,18 +41,16 @@ const startAuth = (req, res) => {
     }
 };
 
-/**
- * OAuth callback
- */
 const handleCallback = async (req, res) => {
     try {
         const { code } = req.query;
+        const userId = req.userId;
 
         if (!code) {
             return res.status(400).send('No authorization code received');
         }
 
-        const { clientId, clientSecret, redirectUri } = configService.getCredentials();
+        const { clientId, clientSecret, redirectUri } = configService.getCredentials(userId);
 
         if (!clientId || !clientSecret) {
             return res.status(400).send('Credentials not found');
@@ -65,6 +64,7 @@ const handleCallback = async (req, res) => {
         }
 
         configService.saveTokens(
+            userId,
             tokens.access_token,
             tokens.refresh_token,
             tokens.expiry_date
@@ -78,11 +78,11 @@ const handleCallback = async (req, res) => {
 };
 
 const checkSetup = (req, res) => {
-    res.json({ isSetupComplete: configService.isSetupComplete() });
+    res.json({ isSetupComplete: configService.isSetupComplete(req.userId) });
 };
 
 const resetSetup = (req, res) => {
-    configService.resetConfig();
+    configService.resetConfig(req.userId);
     res.json({ message: 'Configuration reset' });
 };
 

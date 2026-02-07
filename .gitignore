@@ -6,3 +6,5 @@ data/config.json
 data/db.json
 uploads/
 *.tmp
+data/users/
+wait/*

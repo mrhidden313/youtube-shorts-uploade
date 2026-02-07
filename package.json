@@ -15,10 +15,12 @@
     "cors": "^2.8.6",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+    "express-session": "^1.19.0",
     "googleapis": "^171.2.0",
     "luxon": "^3.7.2",
     "multer": "^2.0.2",
     "node-cron": "^4.2.1",
-    "open": "^11.0.0"
+    "open": "^11.0.0",
+    "uuid": "^13.0.0"
   }
 }
