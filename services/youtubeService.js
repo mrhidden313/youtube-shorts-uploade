@@ -131,4 +131,33 @@ const uploadVideo = async (video, metadata) => {
     }
 };
 
-module.exports = { uploadVideo };
+/**
+ * Get Channel Profile (Name & Avatar)
+ */
+const getChannelProfile = async () => {
+    await initializeClient();
+    try {
+        const response = await youtube.channels.list({
+            part: 'snippet',
+            mine: true
+        });
+
+        if (response.data.items && response.data.items.length > 0) {
+            const channel = response.data.items[0];
+            return {
+                name: channel.snippet.title,
+                avatar: channel.snippet.thumbnails.default.url,
+                connected: true
+            };
+        }
+        return { connected: false, error: 'No channel found' };
+    } catch (error) {
+        console.error('[YouTube API] Profile fetch failed:', error.message);
+        if (error.message.includes('invalid_grant') || error.code === 401) {
+            throw new Error('Token Expired');
+        }
+        throw error;
+    }
+};
+
+module.exports = { uploadVideo, getChannelProfile };

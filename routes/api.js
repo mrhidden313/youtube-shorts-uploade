@@ -27,6 +27,7 @@ const upload = multer({ storage: storage });
 
 // Routes
 router.post('/upload', upload.single('video'), uploadController.uploadVideo);
+router.get('/channel-status', statusController.getChannelStatus);
 router.get('/status', statusController.getStatus);
 router.get('/settings', statusController.getSettings);
 router.post('/settings', statusController.updateSettings);

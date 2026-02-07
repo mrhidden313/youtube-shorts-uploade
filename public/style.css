@@ -1,18 +1,103 @@
 :root {
     --primary: #00d9a6;
     --primary-glow: rgba(0, 217, 166, 0.4);
-    --aqua: #00fff2;
-    --aqua-glow: rgba(0, 255, 242, 0.3);
-    --dark-red: #8b0000;
-    --dark: #0a0a0f;
-    --dark-card: rgba(15, 25, 30, 0.9);
-    --light: #f8f9fa;
-    --success: #00ff88;
+    --aqua: #00f2ea;
+    --aqua-glow: rgba(0, 242, 234, 0.2);
+    /* Darker, richer Red for better contrast against dark backgrounds */
+    --dark-red: #d63031;
+    --red-glow: rgba(214, 48, 49, 0.4);
+
+    /* Deep dark background to make colors pop */
+    --dark: #0f1115;
+    --dark-card: #161b22;
+    --dark-input: #0d1117;
+
+    --light: #e6edf3;
+    --success: #00f2ea;
     --danger: #ff4757;
     --warning: #ffa502;
-    --gray: #8b9a9a;
-    --accent: #00d9a6;
-    --accent-glow: rgba(0, 217, 166, 0.3);
+    --gray: #8b949e;
+}
+
+/* ... (rest of the file with Updated Colors) ... */
+
+/* Simplified for brevity - I will apply specific replaces to key areas */
+.btn-submit {
+    /* ... */
+    background: linear-gradient(45deg, var(--aqua), var(--primary));
+    /* ... */
+}
+
+/* Countdown Styles - Updated */
+.countdown-badge.now {
+    background: linear-gradient(135deg, rgba(0, 255, 242, 0.2), rgba(0, 217, 166, 0.2));
+    border-color: var(--aqua);
+    color: var(--aqua);
+    animation: countdownPulse 1s ease-in-out infinite;
+    box-shadow: 0 0 10px var(--aqua-glow);
+}
+
+/* Channel Status Styles */
+.channel-status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+    background: rgba(0, 255, 242, 0.05);
+    border: 1px solid rgba(0, 255, 242, 0.2);
+    border-radius: 50px;
+    margin-right: 15px;
+    animation: fadeIn 0.5s ease-out;
+}
+
+.channel-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid var(--aqua);
+    box-shadow: 0 0 10px var(--aqua-glow);
+}
+
+.channel-name {
+    font-weight: 600;
+    color: var(--aqua);
+    text-shadow: 0 0 5px var(--aqua-glow);
+}
+
+.channel-status.error {
+    background: rgba(255, 71, 87, 0.1);
+    border-color: var(--danger);
+}
+
+.channel-status.error .channel-name {
+    color: var(--danger);
+    text-shadow: 0 0 5px rgba(255, 71, 87, 0.4);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes countdownPulse {
+
+    0%,
+    100% {
+        opacity: 1;
+        box-shadow: 0 0 10px var(--aqua-glow);
+    }
+
+    50% {
+        opacity: 0.7;
+        box-shadow: 0 0 20px var(--aqua-glow);
+    }
 }
 
 * {
@@ -21,12 +106,23 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #0a0f0f 0%, #0d1a1a 50%, #0a0a0f 100%);
-    color: #fff;
+    /* Cleaner, Darker Gradient */
+    background: radial-gradient(circle at top center, #1a202c 0%, #0d1117 100%);
+    color: var(--light);
     margin: 0;
     padding: 0;
     min-height: 100vh;
     overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: 'Luckiest Guy', cursive;
+    letter-spacing: 1px;
 }
 
 /* Background Glow - Green & Aqua */
@@ -36,9 +132,9 @@ body {
     left: -50%;
     width: 200%;
     height: 200%;
-    background: radial-gradient(circle at 30% 30%, var(--aqua-glow) 0%, transparent 50%),
+    background: radial-gradient(circle at 10% 30%, var(--aqua-glow) 0%, transparent 50%),
         radial-gradient(circle at 70% 70%, var(--primary-glow) 0%, transparent 50%),
-        radial-gradient(circle at 50% 50%, rgba(139, 0, 0, 0.1) 0%, transparent 40%);
+        radial-gradient(circle at 50% 50%, rgba(230, 11, 11, 0.1) 0%, transparent 40%);
     animation: bgFloat 15s ease-in-out infinite;
     z-index: -1;
 }
@@ -71,6 +167,48 @@ header {
     text-align: center;
     padding: 30px 0;
     margin-bottom: 30px;
+}
+
+/* Header Title - Black with Red Glow */
+.title-glow {
+    font-family: 'Luckiest Guy', cursive;
+    font-size: 52px;
+    letter-spacing: 2px;
+
+    /* Black Color */
+    color: #000;
+    -webkit-text-fill-color: #000;
+    background-color: #0a0a0f;
+
+    /* No Border */
+    -webkit-text-stroke: 0;
+
+    /* Red Glow */
+    border: #000;
+
+    /* Prevent selection underline */
+    user-select: none;
+    cursor: default;
+
+    margin-bottom: 5px;
+    display: inline-block;
+    padding: 0 10px;
+}
+
+/* Remove old animation keyframes if present */
+@keyframes titlePulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+}
+
+.subtitle {
+    color: var(--gray);
+    font-weight: 500;
+    letter-spacing: 1px;
+    margin-top: 0;
 }
 
 .animated-header h1 {
@@ -223,26 +361,36 @@ button {
     font-weight: 800;
 }
 
+/* Inputs & Selects */
 input,
-textarea,
-select {
+select,
+textarea {
     width: 100%;
-    padding: 16px 18px;
-    border: 2px solid rgba(0, 217, 166, 0.2);
-    border-radius: 14px;
-    background: rgba(0, 20, 20, 0.6);
-    color: white;
+    /* Darker input background */
+    background: var(--dark-input);
+    border: 1px solid #30363d;
+    color: var(--light);
+    padding: 12px 15px;
+    border-radius: 8px;
     font-size: 15px;
-    font-weight: 500;
     transition: all 0.3s ease;
+    font-family: 'Segoe UI', sans-serif;
 }
 
 input:focus,
-textarea:focus,
-select:focus {
+select:focus,
+textarea:focus {
     outline: none;
     border-color: var(--aqua);
-    box-shadow: 0 0 25px var(--aqua-glow);
+    box-shadow: 0 0 0 3px rgba(0, 242, 234, 0.1);
+}
+
+/* File Input Fix */
+input[type="file"] {
+    background: var(--dark-input);
+    padding: 10px;
+    border: 1px dashed #30363d;
+    cursor: pointer;
 }
 
 input[readonly] {
@@ -535,4 +683,44 @@ footer {
 
 .btn-icon {
     margin-right: 8px;
+}
+
+/* Countdown Timer Styles */
+.countdown-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(135deg, rgba(0, 217, 166, 0.2), rgba(0, 255, 242, 0.15));
+    border: 1px solid rgba(0, 217, 166, 0.3);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--aqua);
+    margin-top: 8px;
+}
+
+.countdown-badge.soon {
+    background: linear-gradient(135deg, rgba(255, 165, 2, 0.2), rgba(255, 127, 0, 0.15));
+    border-color: rgba(255, 165, 2, 0.4);
+    color: #ffa502;
+}
+
+.countdown-badge.now {
+    background: linear-gradient(135deg, rgba(0, 255, 136, 0.2), rgba(0, 217, 166, 0.15));
+    border-color: rgba(0, 255, 136, 0.4);
+    color: var(--success);
+    animation: countdownPulse 1s ease-in-out infinite;
+}
+
+@keyframes countdownPulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
 }

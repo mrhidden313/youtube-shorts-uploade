@@ -7,13 +7,34 @@ const uploadVideo = (req, res) => {
             return res.status(400).json({ error: 'No video file provided' });
         }
 
-        const { title, description, tags, videoType, scheduleTime, scheduleDate, timezone } = req.body;
+        const { title, description, tags, videoType, scheduledDateTime, timezone, uploadHours, uploadMinutes } = req.body;
 
-        // Create scheduled datetime
-        let scheduledDateTime = null;
-        if (scheduleDate && scheduleTime) {
-            scheduledDateTime = `${scheduleDate}T${scheduleTime}:00`;
+        // Calculate and validate scheduled time
+        let finalScheduledDateTime = scheduledDateTime;
+
+        // Validation: verify it looks like a date string and is valid
+        const isValidDate = (d) => {
+            return d && !isNaN(Date.parse(d));
+        };
+
+        if (!isValidDate(finalScheduledDateTime)) {
+            console.log('[Upload] Invalid or missing direct Date, calculating from offset...');
+            const hours = parseInt(uploadHours) || 0;
+            const minutes = parseInt(uploadMinutes) || 0;
+
+            // Default to 15 mins if both are 0 or missing, just to be safe so it schedules something
+            if (hours === 0 && minutes === 0) {
+                const now = new Date();
+                // Default 15 min buffer
+                finalScheduledDateTime = new Date(now.getTime() + 15 * 60 * 1000).toISOString();
+            } else {
+                const now = new Date();
+                const offsetMs = (hours * 60 * 60 * 1000) + (minutes * 60 * 1000);
+                finalScheduledDateTime = new Date(now.getTime() + offsetMs).toISOString();
+            }
         }
+
+        console.log('[Upload] Scheduled DateTime:', finalScheduledDateTime);
 
         const videoEntry = {
             id: Date.now().toString(),
@@ -22,8 +43,8 @@ const uploadVideo = (req, res) => {
             title: title || req.file.originalname,
             description: description || '',
             tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
-            videoType: videoType || 'short', // 'short' or 'long'
-            scheduledDateTime: scheduledDateTime,
+            videoType: videoType || 'short',
+            scheduledDateTime: finalScheduledDateTime,
             timezone: timezone || 'Asia/Karachi',
             status: 'pending',
             createdAt: new Date().toISOString()

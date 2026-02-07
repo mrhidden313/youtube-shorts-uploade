@@ -41,10 +41,24 @@ const deleteVideo = (req, res) => {
     }
 };
 
+const getChannelStatus = async (req, res) => {
+    try {
+        const youtubeService = require('../services/youtubeService');
+        const profile = await youtubeService.getChannelProfile();
+        res.json(profile);
+    } catch (error) {
+        res.status(500).json({
+            connected: false,
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
     getStatus,
     getSettings,
     updateSettings,
     clearQueue,
-    deleteVideo
+    deleteVideo,
+    getChannelStatus
 };

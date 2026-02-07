@@ -8,7 +8,8 @@ const configService = require('../services/configService');
 
 // OAuth scopes - ONLY youtube.upload needed
 const SCOPES = [
-    'https://www.googleapis.com/auth/youtube.upload'
+    'https://www.googleapis.com/auth/youtube.upload',
+    'https://www.googleapis.com/auth/youtube.readonly'
 ];
 
 /**

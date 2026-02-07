@@ -44,18 +44,30 @@ const fetchRealTime = (timezone) => {
 };
 
 const getCurrentTime = async (timezone) => {
+    // Primary: System Time (Server Time)
+    // Most cloud servers (Replit, Heroku, etc.) have correct time.
+    // We use Luxon to handle timezone conversion.
+    const systemTime = DateTime.now().setZone(timezone);
+
+    // Optional: Verify with external API occasionally (every 5 mins)
+    // If it fails, we JUST log it and continue using systemTime.
     const now = Date.now();
-    if (cachedTime && (now - lastFetchTime) < CACHE_SECONDS * 1000) {
-        return cachedTime.plus({ seconds: Math.floor((now - lastFetchTime) / 1000) });
+    if (!cachedTime || (now - lastFetchTime) > 300 * 1000) { // 5 minutes
+        fetchRealTime(timezone).then(realTime => {
+            cachedTime = realTime;
+            lastFetchTime = now;
+
+            // Check drift
+            const drift = Math.abs(systemTime.diff(realTime, 'seconds').seconds);
+            if (drift > 60) {
+                console.warn(`[Time Warning] System time drifted by ${drift.toFixed(1)}s from Real Time API`);
+            }
+        }).catch(err => {
+            console.log(`[Time API] Check failed (using system time): ${err.message}`);
+        });
     }
-    try {
-        cachedTime = await fetchRealTime(timezone);
-        lastFetchTime = now;
-        return cachedTime;
-    } catch (error) {
-        console.error('[Time API] Fallback to luxon');
-        return DateTime.now().setZone(timezone);
-    }
+
+    return systemTime;
 };
 
 const isReadyForUpload = async (video) => {
@@ -132,12 +144,11 @@ const initScheduler = async () => {
     console.log('  FARMAN BULK UPLOADER v2.0');
     console.log('========================================');
 
-    try {
-        const pk = await fetchRealTime('Asia/Karachi');
-        console.log(`Pakistan Time: ${pk.toFormat('yyyy-MM-dd hh:mm:ss a')}`);
-    } catch (e) {
-        console.log('Could not fetch real time');
-    }
+    const pk = DateTime.now().setZone('Asia/Karachi');
+    console.log(`System Time (PKT): ${pk.toFormat('yyyy-MM-dd hh:mm:ss a')}`);
+
+    // Background check
+    fetchRealTime('Asia/Karachi').catch(() => console.log('[Time API] Initial check skipped (using system time)'));
 
     console.log(`Window: ${UPLOAD_WINDOW_MINUTES}min | Retries: ${MAX_RETRIES}`);
     console.log('========================================');

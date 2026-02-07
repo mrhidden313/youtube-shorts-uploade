@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Farman Bulk Uploader</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -14,12 +17,15 @@
         <header>
             <div class="header-content">
                 <div>
-                    <h1
-                        style="background: linear-gradient(135deg, #fff, #6c5ce7); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;">
-                        🎬 Farman Bulk Uploader</h1>
+                    <h1 class="title-glow">Farman Bulk Uploader</h1>
                     <p class="subtitle">YouTube Shorts & Videos Automation</p>
                 </div>
-                <button class="btn-logout" onclick="logout()">🔓 Disconnect</button>
+                <div class="header-right" style="display: flex; align-items: center;">
+                    <div id="channelStatus" class="channel-status">
+                        <span style="font-size:12px; opacity:0.7;">Connecting...</span>
+                    </div>
+                    <button class="btn-logout" onclick="logout()">🔓 Disconnect</button>
+                </div>
             </div>
         </header>
 
@@ -54,20 +60,12 @@
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Schedule Date</label>
-                            <input type="date" id="scheduleDate" required>
+                            <label>⏰ Upload After (Hours)</label>
+                            <input type="number" id="uploadHours" min="0" max="72" value="0" required>
                         </div>
                         <div class="form-group">
-                            <label>Schedule Time</label>
-                            <input type="time" id="scheduleTime" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Timezone</label>
-                            <select id="timezone" required>
-                                <option value="Asia/Karachi">🇵🇰 Pakistan</option>
-                                <option value="America/New_York">🇺🇸 USA East</option>
-                                <option value="America/Los_Angeles">🇺🇸 USA West</option>
-                            </select>
+                            <label>⏰ Upload After (Minutes)</label>
+                            <input type="number" id="uploadMinutes" min="0" max="59" value="30" required>
                         </div>
                     </div>
                     <button type="submit" class="btn-glow">Add to Queue</button>
