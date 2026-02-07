@@ -3,7 +3,12 @@ const path = require('path');
 
 const DB_PATH = path.join(__dirname, '../data/db.json');
 
-// Ensure DB exists
+// Ensure DB Directory and File exist
+const dir = path.dirname(DB_PATH);
+if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+}
+
 if (!fs.existsSync(DB_PATH)) {
     fs.writeFileSync(DB_PATH, JSON.stringify({ settings: {}, videos: [] }, null, 2));
 }
